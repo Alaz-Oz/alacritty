@@ -335,7 +335,10 @@ impl<T: EventListener> Execute<T> for Action {
             Action::ToggleFullscreen => ctx.window().toggle_fullscreen(),
             Action::ToggleMaximized => ctx.window().toggle_maximized(),
             #[cfg(target_os = "macos")]
-            Action::ToggleSimpleFullscreen => ctx.window().toggle_simple_fullscreen(),
+            Action::ToggleSimpleFullscreen => {
+                let buttonless = ctx.config().window.decorations == Decorations::Buttonless;
+                ctx.window().toggle_simple_fullscreen(buttonless);
+            },
             #[cfg(target_os = "macos")]
             Action::Hide => ctx.event_loop().hide_application(),
             #[cfg(target_os = "macos")]

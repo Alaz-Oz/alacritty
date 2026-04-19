@@ -23,7 +23,7 @@ use std::fmt::{self, Display, Formatter};
 #[cfg(target_os = "macos")]
 use {
     objc2::MainThreadMarker,
-    objc2_app_kit::{NSColorSpace, NSView},
+    objc2_app_kit::{NSColorSpace, NSView, NSWindowButton},
     winit::platform::macos::{OptionAsAlt, WindowAttributesExtMacOS, WindowExtMacOS},
 };
 
@@ -410,8 +410,8 @@ impl Window {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn toggle_simple_fullscreen(&self) {
-        self.set_simple_fullscreen(!self.window.simple_fullscreen());
+    pub fn toggle_simple_fullscreen(&self, buttonless: bool) {
+        self.set_simple_fullscreen(!self.window.simple_fullscreen(), buttonless);
     }
 
     #[cfg(target_os = "macos")]
@@ -431,9 +431,31 @@ impl Window {
         self.window.current_monitor()
     }
 
+    /// Hides titlebar buttons (minimize, maximize, close) one by one
     #[cfg(target_os = "macos")]
-    pub fn set_simple_fullscreen(&self, simple_fullscreen: bool) {
+    pub fn hide_titlebar_buttons(&self, buttonless: bool) {
+        if let RawWindowHandle::AppKit(handle) = self.raw_window_handle() {
+            let view = unsafe { handle.ns_view.cast::<NSView>().as_ref() };
+            if let Some(window) = view.window() {
+                for button in &[
+                    NSWindowButton::MiniaturizeButton,
+                    NSWindowButton::ZoomButton,
+                    NSWindowButton::CloseButton,
+                ] {
+                    if let Some(b) = window.standardWindowButton(*button) {
+                        b.setHidden(buttonless);
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    pub fn set_simple_fullscreen(&self, simple_fullscreen: bool, buttonless: bool) {
         self.window.set_simple_fullscreen(simple_fullscreen);
+        if !simple_fullscreen {
+            self.hide_titlebar_buttons(buttonless);
+        }
     }
 
     /// Set IME inhibitor state and disable IME while any are present.

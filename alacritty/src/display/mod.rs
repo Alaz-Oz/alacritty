@@ -39,6 +39,8 @@ use alacritty_terminal::vte::ansi::{CursorShape, NamedColor};
 use crate::config::UiConfig;
 use crate::config::debug::RendererPreference;
 use crate::config::font::Font;
+#[cfg(target_os = "macos")]
+use crate::config::window::Decorations;
 use crate::config::window::Dimensions;
 #[cfg(not(windows))]
 use crate::config::window::StartupMode;
@@ -498,7 +500,10 @@ impl Display {
         if !_tabbed {
             match config.window.startup_mode {
                 #[cfg(target_os = "macos")]
-                StartupMode::SimpleFullscreen => window.set_simple_fullscreen(true),
+                StartupMode::SimpleFullscreen => window.set_simple_fullscreen(
+                    true,
+                    config.window.decorations == Decorations::Buttonless,
+                ),
                 StartupMode::Maximized if !is_wayland => window.set_maximized(true),
                 _ => (),
             }
